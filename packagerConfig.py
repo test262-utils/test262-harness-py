@@ -26,7 +26,7 @@ import stat
 #--Globals---------------------------------------------------------------------
 MAX_CASES_PER_JSON = 1000
 
-WEBSITE_SHORT_NAME = "website2"
+WEBSITE_SHORT_NAME = "website"
 
 #Directories under "test\suite\" containing ES5 test chapter directories
 #with *.js tests underneath them
