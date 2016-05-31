@@ -19,8 +19,7 @@ ONE_JSON_PER_CHAPTER = False
 TESTCASELIST_PER_JSON = True
 
 #Path to the root of the Hg repository (relative to this file's location)
-TEST262_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            "..", "..")
+TEST262_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 TEST262_ROOT = os.path.abspath(TEST262_ROOT)
 
 #Directory full of test cases we want to port to the website's test

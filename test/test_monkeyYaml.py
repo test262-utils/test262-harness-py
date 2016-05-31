@@ -11,18 +11,9 @@ import imp
 
 # add parent dir to search path
 import sys
-#sys.path.insert(0, "..")
+sys.path.append("test262-harness-py")
 
-f = None
-try:
-    (f, pathname, description) = imp.find_module("monkeyYaml", [os.path.join(os.getcwd(), "../")])
-    module = imp.load_module("monkeyYaml", f, pathname, description)
-    monkeyYaml = module
-except:
-    raise ImportError("Cannot load monkeyYaml")
-finally:
-    if f:
-        f.close()
+import monkeyYaml
 
 #import monkeyYaml
 

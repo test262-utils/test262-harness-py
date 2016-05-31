@@ -10,12 +10,12 @@ import yaml
 
 # add parent dir to search path
 import sys
-sys.path.insert(0, "..")
+sys.path.append("test262-harness-py")
 
 from parseTestRecord import *
 
 def slurpFile(name):
-    with open(name) as f:
+    with open('test/' + name) as f:
         contents = f.read()
     return contents
 
