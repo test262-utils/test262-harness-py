@@ -12,6 +12,7 @@ mYamlIntDigits = re.compile(r"^[-0-9]*$")
 mYamlFloatDigits = re.compile(r"^[-.0-9eE]*$")
 mYamlListPattern = re.compile(r"^\[(.*)\]$")
 mYamlMultilineList = re.compile(r"^ *- (.*)$")
+mYamlStringValue = re.compile(r"^('|\").*\1$")
 
 def load(str):
     dict = None
@@ -89,6 +90,8 @@ def myReadOneLine(value):
             value = float(value)
         except ValueError:
             pass
+    elif mYamlStringValue.match(value):
+        value = value[1:-1]
     return value
 
 def myFlowList(value):
