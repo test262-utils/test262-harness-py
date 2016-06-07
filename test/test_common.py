@@ -12,7 +12,7 @@ import sys
 sys.path.append("test262-harness-py")
 
 
-from common import *
+from _common import *
 
 def slurpFile(name):
     with open('test/' + name) as f:

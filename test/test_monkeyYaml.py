@@ -13,9 +13,7 @@ import imp
 import sys
 sys.path.append("test262-harness-py")
 
-import monkeyYaml
-
-#import monkeyYaml
+import _monkeyYaml as monkeyYaml
 
 class TestMonkeyYAMLParsing(unittest.TestCase):
 

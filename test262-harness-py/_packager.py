@@ -13,7 +13,7 @@ import re
 import json
 import stat
 
-from common import convertDocString
+from _common import convertDocString
 
 #--Stubs-----------------------------------------------------------------------
 def generateHarness(harnessType, jsonFile, description):
@@ -21,7 +21,7 @@ def generateHarness(harnessType, jsonFile, description):
 
 
 #------------------------------------------------------------------------------
-from packagerConfig import *
+from _packagerConfig import *
 
 #--Globals---------------------------------------------------------------------
 

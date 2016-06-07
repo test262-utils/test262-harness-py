@@ -30,7 +30,7 @@ from collections import Counter
 
 from parseTestRecord import parseTestRecord, stripHeader
 
-from packagerConfig import *
+from _packagerConfig import *
 
 class Test262Error(Exception):
   def __init__(self, message):
