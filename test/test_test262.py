@@ -10,7 +10,7 @@ import os
 import cStringIO
 from functools import wraps
 
-sys.path.append("test262-harness-py")
+sys.path.append("src")
 
 import test262
 

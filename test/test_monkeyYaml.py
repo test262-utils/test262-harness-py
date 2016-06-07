@@ -11,7 +11,7 @@ import imp
 
 # add parent dir to search path
 import sys
-sys.path.append("test262-harness-py")
+sys.path.append("src")
 
 import _monkeyYaml as monkeyYaml
 

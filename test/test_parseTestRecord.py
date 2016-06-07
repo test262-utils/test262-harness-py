@@ -10,7 +10,7 @@ import yaml
 
 # add parent dir to search path
 import sys
-sys.path.append("test262-harness-py")
+sys.path.append("src")
 
 from parseTestRecord import *
 
