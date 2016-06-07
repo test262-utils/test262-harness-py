@@ -18,7 +18,7 @@ import tempfile
 import time
 import imp
 
-# from TestCasePackagerConfig import *
+from _monkeyYaml import load as yamlLoad
 
 headerPatternStr = r"(?:(?:\s*\/\/.*)?\s*\n)*"
 captureCommentPatternStr = r"\/\*\*?((?:\s|\S)*?)\*\/\s*\n"
@@ -37,8 +37,6 @@ atattrs = re.compile(r"\s*\n\s*\*\s*@")
 
 yamlPattern = re.compile(r"---((?:\s|\S)*)---")
 newlinePattern = re.compile(r"\n")
-
-yamlLoad = None
 
 def stripStars(text):
     return stars.sub('\n', text).strip()
@@ -77,7 +75,6 @@ def oldAttrParser(testRecord, body, name):
 def yamlAttrParser(testRecord, attrs, name):
     match = yamlPattern.match(attrs)
     body = match.group(1)
-    importYamlLoad()
     parsed = yamlLoad(body)
 
     if (parsed is None):
@@ -108,23 +105,3 @@ def parseTestRecord(src, name):
             oldAttrParser(testRecord, attrs, name)
 
     return testRecord
-
-def importYamlLoad():
-    global yamlLoad
-    if yamlLoad:
-        return
-    monkeyYaml = loadMonkeyYaml()
-    yamlLoad = monkeyYaml.load
-
-def loadMonkeyYaml():
-    f = None
-    try:
-        p = os.path.dirname(os.path.realpath(__file__))
-        (f, pathname, description) = imp.find_module("_monkeyYaml", [p])
-        module = imp.load_module("_monkeyYaml", f, pathname, description)
-        return module
-    except:
-        raise ImportError("Cannot load monkeyYaml")
-    finally:
-        if f:
-            f.close()
