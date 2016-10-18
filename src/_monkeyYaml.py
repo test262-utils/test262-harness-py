@@ -44,8 +44,8 @@ def load(str):
     return dict
 
 def myReadValue(lines, value):
-    if value == ">":
-        (lines, value) = myMultiline(lines, value)
+    if value == ">" or value == "|":
+        (lines, value) = myMultiline(lines, value, value == "|")
         value = value + "\n"
         return (lines, value)
     if lines and not value and myMaybeList(lines[0]):
@@ -99,21 +99,27 @@ def myFlowList(value):
     values = result.group(1).split(",")
     return [myReadOneLine(v.strip()) for v in values]
 
-def myMultiline(lines, value):
+def myMultiline(lines, value, preserveNewlines=False):
     # assume no explcit indentor (otherwise have to parse value)
     value = []
     indent = myLeadingSpaces(lines[0])
     while lines:
         line = lines.pop(0)
         if myIsAllSpaces(line):
-            value += ["\n"]
+            if preserveNewlines:
+                value += [""]
+            else:
+                value += ["\n"]
         elif myLeadingSpaces(line) < indent:
             lines.insert(0, line)
             break;
         else:
             value += [line[(indent):]]
-    value = " ".join(value)
-    return (lines, value)
+    joinOn = " "
+    if preserveNewlines:
+      joinOn = "\n"
+
+    return (lines, joinOn.join(value))
 
 def myIsAllSpaces(line):
     return len(line.strip()) == 0

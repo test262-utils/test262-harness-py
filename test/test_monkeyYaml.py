@@ -169,6 +169,15 @@ es6id:  19.1.2.1
 """
         self.assertEqual(monkeyYaml.load(y), yaml.load(y))
 
+    def test_no_folding(self):
+        y = """
+description: |
+  This is text that, naively parsed, would appear
+
+  to: have
+  nested: data
+"""
+        self.assertEqual(monkeyYaml.load(y), yaml.load(y))
 
 if __name__ == '__main__':
     unittest.main()
