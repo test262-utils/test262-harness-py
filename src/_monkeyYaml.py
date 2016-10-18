@@ -45,13 +45,16 @@ def load(str):
 
 def myReadValue(lines, value):
     if value == ">" or value == "|":
-        (lines, value) = myMultiline(lines, value, value == "|")
+        (lines, value) = myMultiline(lines, value == "|")
         value = value + "\n"
         return (lines, value)
-    if lines and not value and myMaybeList(lines[0]):
-        return myMultilineList(lines, value)
+    if lines and not value:
+        if myMaybeList(lines[0]):
+            return myMultilineList(lines, value)
+        return myMultiline(lines, False)
     else:
         return lines, myReadOneLine(value)
+    return lines, myReadOneLine(value)
 
 def myMaybeList(value):
     return mYamlMultilineList.match(value)
@@ -99,27 +102,36 @@ def myFlowList(value):
     values = result.group(1).split(",")
     return [myReadOneLine(v.strip()) for v in values]
 
-def myMultiline(lines, value, preserveNewlines=False):
+def myMultiline(lines, preserveNewlines=False):
     # assume no explcit indentor (otherwise have to parse value)
-    value = []
+    value = ""
     indent = myLeadingSpaces(lines[0])
+    wasEmpty = None
+
     while lines:
         line = lines.pop(0)
-        if myIsAllSpaces(line):
+        isEmpty = myIsAllSpaces(line)
+
+        if isEmpty:
             if preserveNewlines:
-                value += [""]
-            else:
-                value += ["\n"]
+                value += "\n"
         elif myLeadingSpaces(line) < indent:
             lines.insert(0, line)
             break;
         else:
-            value += [line[(indent):]]
-    joinOn = " "
-    if preserveNewlines:
-      joinOn = "\n"
+            if preserveNewlines:
+                if wasEmpty != None:
+                    value += "\n"
+            else:
+                if wasEmpty == False:
+                    value += " "
+                elif wasEmpty == True:
+                    value += "\n"
+            value += line[(indent):]
 
-    return (lines, joinOn.join(value))
+        wasEmpty = isEmpty
+
+    return (lines, value)
 
 def myIsAllSpaces(line):
     return len(line.strip()) == 0
