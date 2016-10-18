@@ -15,12 +15,17 @@ mYamlMultilineList = re.compile(r"^ *- (.*)$")
 mYamlStringValue = re.compile(r"^('|\").*\1$")
 
 def load(str):
+    return myReadDict(str.splitlines())[1]
+
+def myReadDict(lines, indent=""):
     dict = None
     key = None
     emptyLines = 0
 
-    lines = str.splitlines()
     while lines:
+        if not lines[0].startswith(indent):
+            break
+
         line = lines.pop(0)
         if myIsAllSpaces(line):
             emptyLines += 1
@@ -32,7 +37,7 @@ def load(str):
                 dict = {}
             key = result.group(1).strip()
             value = result.group(2).strip()
-            (lines, value) = myReadValue(lines, value)
+            (lines, value) = myReadValue(lines, value, indent)
             dict[key] = value
         else:
             if dict and key and key in dict:
@@ -41,9 +46,9 @@ def load(str):
             else:
                 raise Exception("monkeyYaml is confused at " + line)
         emptyLines = 0
-    return dict
+    return lines, dict
 
-def myReadValue(lines, value):
+def myReadValue(lines, value, indent):
     if value == ">" or value == "|":
         (lines, value) = myMultiline(lines, value == "|")
         value = value + "\n"
@@ -51,9 +56,11 @@ def myReadValue(lines, value):
     if lines and not value:
         if myMaybeList(lines[0]):
             return myMultilineList(lines, value)
-        return myMultiline(lines, False)
-    else:
-        return lines, myReadOneLine(value)
+        indentMatch = re.match("(" + indent + r"\s+)", lines[0])
+        if indentMatch:
+            if ":" in lines[0]:
+                return myReadDict(lines, indentMatch.group(1))
+            return myMultiline(lines, False)
     return lines, myReadOneLine(value)
 
 def myMaybeList(value):

@@ -171,7 +171,13 @@ flags: [onlyStrict]"""
 
 """, record['test'])
 
+    def test_negative(self):
+        name = 'fixtures/negative.js'
+        contents = slurpFile(name)
+        record = parseTestRecord(contents, name)
 
+        self.assertEqual('early', record['negative']['phase'])
+        self.assertEqual('SyntaxError', record['negative']['type'])
 
 if __name__ == '__main__':
     unittest.main()
