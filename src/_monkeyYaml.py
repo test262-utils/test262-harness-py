@@ -15,12 +15,17 @@ mYamlMultilineList = re.compile(r"^ *- (.*)$")
 mYamlStringValue = re.compile(r"^('|\").*\1$")
 
 def load(str):
+    return myReadDict(str.splitlines())[1]
+
+def myReadDict(lines, indent=""):
     dict = None
     key = None
     emptyLines = 0
 
-    lines = str.splitlines()
     while lines:
+        if not lines[0].startswith(indent):
+            break
+
         line = lines.pop(0)
         if myIsAllSpaces(line):
             emptyLines += 1
@@ -32,7 +37,7 @@ def load(str):
                 dict = {}
             key = result.group(1).strip()
             value = result.group(2).strip()
-            (lines, value) = myReadValue(lines, value)
+            (lines, value) = myReadValue(lines, value, indent)
             dict[key] = value
         else:
             if dict and key and key in dict:
@@ -41,17 +46,22 @@ def load(str):
             else:
                 raise Exception("monkeyYaml is confused at " + line)
         emptyLines = 0
-    return dict
+    return lines, dict
 
-def myReadValue(lines, value):
-    if value == ">":
-        (lines, value) = myMultiline(lines, value)
+def myReadValue(lines, value, indent):
+    if value == ">" or value == "|":
+        (lines, value) = myMultiline(lines, value == "|")
         value = value + "\n"
         return (lines, value)
-    if lines and not value and myMaybeList(lines[0]):
-        return myMultilineList(lines, value)
-    else:
-        return lines, myReadOneLine(value)
+    if lines and not value:
+        if myMaybeList(lines[0]):
+            return myMultilineList(lines, value)
+        indentMatch = re.match("(" + indent + r"\s+)", lines[0])
+        if indentMatch:
+            if ":" in lines[0]:
+                return myReadDict(lines, indentMatch.group(1))
+            return myMultiline(lines, False)
+    return lines, myReadOneLine(value)
 
 def myMaybeList(value):
     return mYamlMultilineList.match(value)
@@ -99,20 +109,35 @@ def myFlowList(value):
     values = result.group(1).split(",")
     return [myReadOneLine(v.strip()) for v in values]
 
-def myMultiline(lines, value):
+def myMultiline(lines, preserveNewlines=False):
     # assume no explcit indentor (otherwise have to parse value)
-    value = []
+    value = ""
     indent = myLeadingSpaces(lines[0])
+    wasEmpty = None
+
     while lines:
         line = lines.pop(0)
-        if myIsAllSpaces(line):
-            value += ["\n"]
+        isEmpty = myIsAllSpaces(line)
+
+        if isEmpty:
+            if preserveNewlines:
+                value += "\n"
         elif myLeadingSpaces(line) < indent:
             lines.insert(0, line)
             break;
         else:
-            value += [line[(indent):]]
-    value = " ".join(value)
+            if preserveNewlines:
+                if wasEmpty != None:
+                    value += "\n"
+            else:
+                if wasEmpty == False:
+                    value += " "
+                elif wasEmpty == True:
+                    value += "\n"
+            value += line[(indent):]
+
+        wasEmpty = isEmpty
+
     return (lines, value)
 
 def myIsAllSpaces(line):

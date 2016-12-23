@@ -49,24 +49,21 @@ class TestMonkeyYAMLParsing(unittest.TestCase):
 
     def test_Multiline_2(self):
         lines = [" foo", " bar"]
-        value = ">"
-        y = "\n".join([value] + lines)
-        (lines, value) = monkeyYaml.myMultiline(lines, value)
+        y = "\n".join([">"] + lines)
+        (lines, value) = monkeyYaml.myMultiline(lines)
         self.assertEqual(lines, [])
         self.assertEqual(value, yaml.load(y))
 
     def test_Multiline_3(self):
         lines = ["  foo", "  bar"]
-        value = ">"
-        y = "\n".join([value] + lines)
-        (lines, value) = monkeyYaml.myMultiline(lines, value)
+        y = "\n".join([">"] + lines)
+        (lines, value) = monkeyYaml.myMultiline(lines)
         self.assertEqual(lines, [])
         self.assertEqual(value, yaml.load(y))
 
     def test_Multiline_4(self):
         lines = ["    foo", "    bar", "  other: 42"]
-        value = ">"
-        (lines, value) = monkeyYaml.myMultiline(lines, value)
+        (lines, value) = monkeyYaml.myMultiline(lines)
         self.assertEqual(lines, ["  other: 42"])
         self.assertEqual(value, "foo bar")
 
@@ -169,6 +166,45 @@ es6id:  19.1.2.1
 """
         self.assertEqual(monkeyYaml.load(y), yaml.load(y))
 
+    def test_no_folding(self):
+        y = """
+description: |
+  This is text that, naively parsed, would appear
+
+  to: have
+  nested: data
+"""
+        self.assertEqual(monkeyYaml.load(y), yaml.load(y))
+
+    def test_value_multiline(self):
+        y = """
+description:
+  This is a multi-line value
+
+  whose trailing newline should be stripped
+"""
+        self.assertEqual(monkeyYaml.load(y), yaml.load(y))
+
+    def test_nested_1(self):
+        y = """
+es61d: 19.1.2.1
+negative:
+    stage: early
+    type: ReferenceError
+description: foo
+"""
+        self.assertEqual(monkeyYaml.load(y), yaml.load(y))
+
+    def test_nested_2(self):
+        y = """
+es61d: 19.1.2.1
+first:
+    second_a:
+        third: 1
+    second_b: 3
+description: foo
+"""
+        self.assertEqual(monkeyYaml.load(y), yaml.load(y))
 
 if __name__ == '__main__':
     unittest.main()
