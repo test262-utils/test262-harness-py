@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright (C) 2015 The Qt Company Ltd.
 # Copyright 2009 the Sputnik authors.  All rights reserved.
 # This code is governed by the BSD license found in the LICENSE file.
 
@@ -25,12 +26,27 @@ import json
 import stat
 import xml.etree.ElementTree as xmlj
 import unicodedata
+import multiprocessing
+import signal
 from collections import Counter
 
 
 from parseTestRecord import parseTestRecord, stripHeader
 
 from _packagerConfig import *
+
+# ############# Helpers needed for parallel multi-process test execution ############
+
+def runTest(case, args):
+    return case.Run(args)
+
+def runTestVarArgs(args):
+    return runTest(*args)
+
+def initWorkerProcess():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+# #############
 
 class Test262Error(Exception):
   def __init__(self, message):
@@ -137,6 +153,8 @@ def BuildOptions():
                     help="Parse TestExpectations to deal with tests known to fail")
   result.add_option("--update-expectations", default=False, action="store_true",
                     help="Update test expectations fail when a test passes that was expected to fail")
+  result.add_option("--parallel", default=False, action="store_true",
+                    help="Run tests in parallel")
   return result
 
 
@@ -619,7 +637,7 @@ class TestSuite(object):
       print
       result.ReportOutcome(False)
 
-  def Run(self, command_template, tests, print_summary, full_summary, logname, junitfile, update_expectations):
+  def Run(self, command_template, tests, print_summary, full_summary, logname, junitfile, update_expectations, parallel):
     if not "{{path}}" in command_template:
       command_template += " {{path}}"
     cases = self.EnumerateTests(tests)
@@ -644,16 +662,29 @@ class TestSuite(object):
           SkipCaseElement.append(SkipElement)
           TestSuiteElement.append(SkipCaseElement)
 
-    for case in cases:
-      result = case.Run(command_template)
-      if junitfile:
-        TestCaseElement = result.XmlAssemble(result)
-        TestSuiteElement.append(TestCaseElement)
-        if case == cases[len(cases)-1]:
-             xmlj.ElementTree(TestSuitesElement).write(junitfile, "UTF-8")
-      if logname:
-        self.WriteLog(result)
-      progress.HasRun(result)
+    if parallel:
+      pool = multiprocessing.Pool(processes=multiprocessing.cpu_count(), initializer=initWorkerProcess)
+      results = pool.imap_unordered(func=runTestVarArgs, iterable=[(case, command_template) for case in cases], chunksize=multiprocessing.cpu_count() * 8)
+      for result in results:
+        if junitfile:
+          TestCaseElement = result.XmlAssemble(result)
+          TestSuiteElement.append(TestCaseElement)
+          if case == cases[len(cases)-1]:
+               xmlj.ElementTree(TestSuitesElement).write(junitfile, "UTF-8")
+        if logname:
+          self.WriteLog(result)
+        progress.HasRun(result)
+    else:
+      for case in cases:
+        result = case.Run(command_template)
+        if junitfile:
+          TestCaseElement = result.XmlAssemble(result)
+          TestSuiteElement.append(TestCaseElement)
+          if case == cases[len(cases)-1]:
+               xmlj.ElementTree(TestSuitesElement).write(junitfile, "UTF-8")
+        if logname:
+          self.WriteLog(result)
+        progress.HasRun(result)
 
     if print_summary:
       self.PrintSummary(progress, logname)
@@ -732,7 +763,8 @@ def Main():
                           options.full_summary,
                           options.logname,
                           options.junitname,
-                          options.update_expectations)
+                          options.update_expectations,
+                          options.parallel)
   return code
 
 if __name__ == '__main__':
