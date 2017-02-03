@@ -55,7 +55,9 @@ def BuildOptions():
   result = optparse.OptionParser()
   result.add_option("--command", default=None, help="The command-line to run")
   result.add_option("--tests", default=path.abspath('.'),
-                    help="Path to the tests")
+                    help="Path to the test262 root directory")
+  result.add_option("--subset", default="test",
+                    help="Path to the subdirectory of a subset of tests to run, appended to the --tests path if it exists (e.g. test/language/types")
   result.add_option("--cat", default=False, action="store_true",
                     help="Print packaged test code that would be run")
   result.add_option("--summary", default=False, action="store_true",
@@ -425,9 +427,10 @@ def PercentFormat(partial, total):
 
 class TestSuite(object):
 
-  def __init__(self, root, strict_only, non_strict_only, unmarked_default, print_handle):
+  def __init__(self, root, test_subset, strict_only, non_strict_only, unmarked_default, print_handle):
     # TODO: derive from packagerConfig.py
-    self.test_root = path.join(root, 'test')
+    self.test_root = path.join(root, test_subset)
+    self.test_subset = test_subset
     self.lib_root = path.join(root, 'harness')
     self.strict_only = strict_only
     self.non_strict_only = non_strict_only
@@ -438,7 +441,7 @@ class TestSuite(object):
 
   def Validate(self):
     if not path.exists(self.test_root):
-      ReportError("No test repository found")
+      ReportError("No test repository found in %s" % self.test_root)
     if not path.exists(self.lib_root):
       ReportError("No test library found")
 
@@ -628,6 +631,7 @@ def Main():
   (options, args) = parser.parse_args()
   ValidateOptions(options)
   test_suite = TestSuite(options.tests,
+                         options.subset,
                          options.strict_only,
                          options.non_strict_only,
                          options.unmarked_default,
