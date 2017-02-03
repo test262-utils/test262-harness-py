@@ -39,7 +39,63 @@ class Test262Error(Exception):
 def ReportError(s):
   raise Test262Error(s)
 
+class TestExpectations:
+    def __init__(self, root, enabled):
+        self.root_dir = root
+        self.testsToSkip = []
+        self.failingTests = []
 
+        if not enabled:
+            return
+
+        expect_file = path.join(self.root_dir, "TestExpectations")
+
+        self.has_expectations = os.path.isfile(expect_file)
+        if not self.has_expectations:
+            print "Not using test expectations (none found at %s)" % self.expect_file
+            return
+        f = open(expect_file)
+        for line in f.read().splitlines():
+            line = line.strip()
+            if len(line) == 0 or line[0] == "#":
+                continue
+            record = line.split()
+            if len(record) == 1:
+                self.testsToSkip.append(record[0])
+            else:
+                test = record[0]
+                expectation = record[1]
+                if expectation == "failing":
+                    self.failingTests.append(test)
+        f.close()
+
+    def update(self, progress):
+        if not self.has_expectations:
+            return
+        unexpectedPasses = [c.case.name[-1] for c in progress.failed_tests if c.case.IsNegative()]
+
+        # If a test fails that we expected to fail, then it actually passed unexpectedly.
+        failures = [c.case.name[-1] for c in progress.failed_tests if not c.case.IsNegative()]
+        for failure in failures:
+            if failure in self.failingTests:
+                unexpectedPasses.append(failure)
+
+        f = open(path.join(self.root_dir, "TestExpectations"))
+        lines = f.read().splitlines()
+        oldLen = len(lines)
+        for result in unexpectedPasses:
+            expectationLine = result + " failing"
+            try:
+                lines.remove(expectationLine)
+            except ValueError:
+                pass
+
+        f.close()
+        if len(lines) != oldLen:
+            f = open(path.join(self.root_dir, "TestExpectations"), "w")
+            f.write("\n".join(lines))
+            f.close()
+            print "Changes to TestExpectations written!"
 
 if not os.path.exists(EXCLUDED_FILENAME):
     print "Cannot generate (JSON) test262 tests without a file," + \
@@ -77,6 +133,10 @@ def BuildOptions():
   result.add_option("--print-handle", default="print", help="Command to print from console")
   result.add_option("--list-includes", default=False, action="store_true",
                     help="List includes required by tests")
+  result.add_option("--with-test-expectations", default=False, action="store_true",
+                    help="Parse TestExpectations to deal with tests known to fail")
+  result.add_option("--update-expectations", default=False, action="store_true",
+                    help="Update test expectations fail when a test passes that was expected to fail")
   return result
 
 
@@ -276,6 +336,14 @@ class TestCase(object):
   def GetPath(self):
     return self.name
 
+  def NegateResult(self):
+    if self.IsNegative():
+      del self.testRecord['negative']
+    else:
+      rec = self.testRecord.setdefault('negative', {})
+      rec['type'] = "Expected negative result";
+      rec['phase'] = "TestExpectationsNegation";
+
   def IsNegative(self):
     return 'negative' in self.testRecord
 
@@ -427,7 +495,7 @@ def PercentFormat(partial, total):
 
 class TestSuite(object):
 
-  def __init__(self, root, test_subset, strict_only, non_strict_only, unmarked_default, print_handle):
+  def __init__(self, root, test_subset, strict_only, non_strict_only, unmarked_default, print_handle, load_expectations):
     # TODO: derive from packagerConfig.py
     self.test_root = path.join(root, test_subset)
     self.test_subset = test_subset
@@ -437,7 +505,7 @@ class TestSuite(object):
     self.unmarked_default = unmarked_default
     self.print_handle = print_handle
     self.include_cache = { }
-
+    self.expectations = TestExpectations(root, load_expectations)
 
   def Validate(self):
     if not path.exists(self.test_root):
@@ -490,17 +558,21 @@ class TestSuite(object):
           if self.ShouldRun(rel_path, tests):
             basename = path.basename(full_path)[:-3]
             name = rel_path.split(path.sep)[:-1] + [basename]
-            if EXCLUDE_LIST.count(basename) >= 1:
+            if EXCLUDE_LIST.count(basename) >= 1 or self.expectations.testsToSkip.count(basename) >= 1:
               print 'Excluded: ' + basename
             else:
               if not self.non_strict_only:
                 strict_case = TestCase(self, name, full_path, True)
+                if self.expectations.failingTests.count(basename) >= 1:
+                    strict_case.NegateResult()
                 if not strict_case.IsNoStrict():
                   if strict_case.IsOnlyStrict() or \
                         self.unmarked_default in ['both', 'strict']:
                     cases.append(strict_case)
               if not self.strict_only:
                 non_strict_case = TestCase(self, name, full_path, False)
+                if self.expectations.failingTests.count(basename) >= 1:
+                    non_strict_case.NegateResult()
                 if not non_strict_case.IsOnlyStrict():
                   if non_strict_case.IsNoStrict() or \
                         self.unmarked_default in ['both', 'non_strict']:
@@ -547,7 +619,7 @@ class TestSuite(object):
       print
       result.ReportOutcome(False)
 
-  def Run(self, command_template, tests, print_summary, full_summary, logname, junitfile):
+  def Run(self, command_template, tests, print_summary, full_summary, logname, junitfile, update_expectations):
     if not "{{path}}" in command_template:
       command_template += " {{path}}"
     cases = self.EnumerateTests(tests)
@@ -591,6 +663,8 @@ class TestSuite(object):
         print
         print "Use --full-summary to see output from failed tests"
     print
+    if update_expectations:
+        self.expectations.update(progress)
     return progress.failed
 
   def WriteLog(self, result):
@@ -635,7 +709,8 @@ def Main():
                          options.strict_only,
                          options.non_strict_only,
                          options.unmarked_default,
-			 options.print_handle)
+                         options.print_handle,
+                         options.with_test_expectations)
   test_suite.Validate()
   if options.loglevel == 'debug':
     logging.basicConfig(level=logging.DEBUG)
@@ -656,7 +731,8 @@ def Main():
                           options.summary or options.full_summary,
                           options.full_summary,
                           options.logname,
-                          options.junitname)
+                          options.junitname,
+                          options.update_expectations)
   return code
 
 if __name__ == '__main__':
