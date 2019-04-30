@@ -24,18 +24,19 @@ _BLANK_LINES = r"([ \t]*[\r\n]{1,2})*"
 _YAML_PATTERN = re.compile(r"/\*---(.*)---\*/" + _BLANK_LINES, re.DOTALL)
 
 # Matches all known variants for the license block.
+# https://github.com/tc39/test262/blob/705d78299cf786c84fa4df473eff98374de7135a/tools/lint/lib/checks/license.py
 _LICENSE_PATTERN = re.compile(
-   r'// Copyright( \(C\))? (\w+) .+\. {1,2}All rights reserved\.[\r\n]{1,2}' +
+   r'// Copyright( \([C]\))? (\w+) .+\. {1,2}All rights reserved\.[\r\n]{1,2}' +
    r'(' +
        r'// This code is governed by the( BSD)? license found in the LICENSE file\.' +
        r'|' +
-       r'// See LICENSE for details\.' +
+       r'// See LICENSE for details.' +
        r'|' +
        r'// Use of this source code is governed by a BSD-style license that can be[\r\n]{1,2}' +
        r'// found in the LICENSE file\.' +
        r'|' +
        r'// See LICENSE or https://github\.com/tc39/test262/blob/master/LICENSE' +
-   r')[\r\n]{1,2}' + _BLANK_LINES, re.IGNORECASE)
+   r')' + _BLANK_LINES, re.IGNORECASE)
 
 def yamlAttrParser(testRecord, attrs, name, onerror = print):
     parsed = yamlLoad(attrs)
