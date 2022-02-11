@@ -69,7 +69,7 @@ def myMaybeList(value):
 def myMultilineList(lines, value):
     # assume no explcit indentor (otherwise have to parse value)
     value = []
-    indent = None
+    indent = 0
     while lines:
         line = lines.pop(0)
         leading = myLeadingSpaces(line)
