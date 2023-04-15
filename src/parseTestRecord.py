@@ -5,7 +5,6 @@
 
 # TODO: resolve differences with common.py and unify into one file.
 
-
 from __future__ import print_function
 
 import os
@@ -13,6 +12,15 @@ import re
 import imp
 
 from _monkeyYaml import load as yamlLoad
+
+headerPatternStr = r"(?:(?:\s*\/\/.*)?\s*\n)*"
+headerPattern = re.compile("^" + headerPatternStr)
+
+
+def stripHeader(src):
+    header = headerPattern.match(src).group(0)
+    return src[len(header):]
+
 
 #def onerror(message):
 #    print(message)
