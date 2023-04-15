@@ -2,6 +2,7 @@
 # This code is governed by the BSD license found in the LICENSE file.
 
 #--Imports---------------------------------------------------------------------
+from __future__ import print_function
 import argparse
 import os
 import sys
@@ -36,8 +37,8 @@ __parser.add_argument('--console', action='store_true', default=False,
 ARGS = __parser.parse_args()
 
 if not os.path.exists(EXCLUDED_FILENAME):
-    print "Cannot generate (JSON) test262 tests without a file," + \
-        " %s, showing which tests have been disabled!" % EXCLUDED_FILENAME
+    print("Cannot generate (JSON) test262 tests without a file," + \
+        " %s, showing which tests have been disabled!" % EXCLUDED_FILENAME)
     sys.exit(1)
 EXCLUDE_LIST = xml.dom.minidom.parse(EXCLUDED_FILENAME)
 EXCLUDE_LIST = EXCLUDE_LIST.getElementsByTagName("test")
@@ -55,11 +56,11 @@ SECTIONS_LIST = []
 
 #--Sanity checks--------------------------------------------------------------#
 if not os.path.exists(TEST262_CASES_DIR):
-    print "Cannot generate (JSON) test262 tests when the path containing said tests, %s, does not exist!" % TEST262_CASES_DIR
+    print("Cannot generate (JSON) test262 tests when the path containing said tests, %s, does not exist!" % TEST262_CASES_DIR)
     sys.exit(1)
 
 if not os.path.exists(TEST262_HARNESS_DIR):
-    print "Cannot copy the test harness from a path, %s, that does not exist!" % TEST262_HARNESS_DIR
+    print("Cannot copy the test harness from a path, %s, that does not exist!" % TEST262_HARNESS_DIR)
     sys.exit(1)
 
 if not os.path.exists(TEST262_WEB_CASES_DIR):
@@ -69,7 +70,7 @@ if not os.path.exists(TEST262_WEB_HARNESS_DIR):
     os.mkdir(TEST262_WEB_HARNESS_DIR)
 
 if not hasattr(ARGS, "version"):
-    print "A test262 suite version must be specified from the command-line to run this script!"
+    print("A test262 suite version must be specified from the command-line to run this script!")
     sys.exit(1)
 
 #--Helpers--------------------------------------------------------------------#
@@ -123,7 +124,7 @@ def dirWalker(dirName):
     #for a JSON file
     temp = getJSCount(dirName)
     if temp==0:
-        print "ERROR:  expected there to be JavaScript tests under dirName!"
+        print("ERROR:  expected there to be JavaScript tests under dirName!")
         sys.exit(1)
     #TODO - commenting out this elif/else clause seems to be causing *.json
     #naming conflicts WRT Sputnik test dirs.
@@ -165,7 +166,7 @@ def getAllJSFiles(dirName):
 for temp in os.listdir(TEST262_CASES_DIR):
     temp = os.path.join(TEST262_CASES_DIR, temp)
     if not os.path.exists(temp):
-        print "The expected ES5 test directory,", temp, "did not exist!"
+        print("The expected ES5 test directory,", temp, "did not exist!")
         sys.exit(1)
 
     if temp.find("/.") != -1:
@@ -179,7 +180,7 @@ for temp in os.listdir(TEST262_CASES_DIR):
 
 for chapter in TEST_SUITE_SECTIONS:
     chapterName = chapter.rsplit(os.path.sep, 1)[1]
-    print "Generating test cases for ES5 chapter:", chapterName
+    print("Generating test cases for ES5 chapter:", chapterName)
     #create dictionaries for all our tests and a section
     testsList = {}
     sect = {}
@@ -223,8 +224,8 @@ for chapter in TEST_SUITE_SECTIONS:
                     scriptCodeContent += line
 
                 if scriptCodeContent==scriptCode[0]:
-                    print "WARNING (" + test + \
-                        "): unable to strip comments/license header/etc."
+                    print("WARNING (" + test + \
+                        "): unable to strip comments/license header/etc.")
                     scriptCodeContent = "".join(scriptCode)
                 scriptCodeContentB64 = base64.b64encode(scriptCodeContent)
 
@@ -255,7 +256,7 @@ for chapter in TEST_SUITE_SECTIONS:
                         fConsoleMeta.write("testDescrip = " + str(metaDict))
                 testCount += 1
             else:
-                print "Excluded:", testName
+                print("Excluded:", testName)
                 excluded = excluded + 1
 
         #we have completed our tests
@@ -311,8 +312,8 @@ with open(os.path.join(TEST262_WEB_CASES_DIR, "suiteDescrip.json"), "w") as f:
     json.dump(SUITE_DESCRIP_JSON, f, separators=(',',':'), sort_keys=True)
 
 #Deploy test harness to website as well
-print ""
-print "Deploying test harness files to 'TEST262_WEB_HARNESS_DIR'..."
+print("")
+print("Deploying test harness files to 'TEST262_WEB_HARNESS_DIR'...")
 if TEST262_HARNESS_DIR!=TEST262_WEB_HARNESS_DIR:
     for filename in [x for x in os.listdir(TEST262_HARNESS_DIR) \
                          if x.endswith(".js")]:
@@ -332,4 +333,4 @@ if TEST262_HARNESS_DIR!=TEST262_WEB_HARNESS_DIR:
             if not fileExists:
                 SC_HELPER.add(toFilename)
 
-print "Done."
+print("Done.")
