@@ -129,7 +129,7 @@ class TempFile(object):
     try:
       self.Close()
       os.unlink(self.name)
-    except OSError, e:
+    except OSError as e:
       logging.error("Error disposing temp file: %s", str(e))
 
 
@@ -660,6 +660,6 @@ if __name__ == '__main__':
   try:
     code = Main()
     sys.exit(code)
-  except Test262Error, e:
+  except Test262Error as e:
     print("Error: %s" % e.message)
     sys.exit(1)
