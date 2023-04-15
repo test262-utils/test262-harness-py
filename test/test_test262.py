@@ -7,8 +7,12 @@ import unittest
 
 import sys
 import os
-import cStringIO
 from functools import wraps
+
+try:
+    from io import StringIO  # Python 3
+except ImportError:
+    from cStringIO import StringIO    # Python 2
 
 sys.path.append("src")
 
@@ -88,7 +92,7 @@ class TestTestSuite(unittest.TestCase):
         progress.succeeded = 98
         progress.failed = 2
 
-        fake_log = cStringIO.StringIO()
+        fake_log = StringIO()
         test_suite.logf = fake_log
 
         result = mute(True)(test_suite.PrintSummary)(progress, True)
@@ -154,7 +158,7 @@ Expected to fail but passed ---
             MockResult(MockTest("bar", True))
         ]
 
-        fake_log = cStringIO.StringIO()
+        fake_log = StringIO()
         test_suite.logf = fake_log
 
         expected_out = """
@@ -195,7 +199,7 @@ Expected to fail but passed ---
         progress.succeeded = 100
         progress.failed = 0
 
-        fake_log = cStringIO.StringIO()
+        fake_log = StringIO()
         test_suite.logf = fake_log
 
         result = mute(True)(test_suite.PrintSummary)(progress, True)
@@ -253,7 +257,7 @@ def mute(returns_output=False):
         def wrapper(*args, **kwargs):
 
             saved_stdout = sys.stdout
-            sys.stdout = cStringIO.StringIO()
+            sys.stdout = StringIO()
 
             try:
                 out = func(*args, **kwargs)
