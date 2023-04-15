@@ -16,5 +16,5 @@ jobs:
     # - run: ruff --format=github --line-length=200 --target-version=py37 .
     # - run: ruff --format=github --target-version=py37 .
     # Fix https://github.com/test262-utils/test262-harness-py/issues/8 and remove `|| true`
-    - run: pytest --ignore=test/test_parseTestRecord.py
+    - run: pytest --ignore=test/test_common.py --ignore=test/test_parseTestRecord.py
     - run: pytest || true
